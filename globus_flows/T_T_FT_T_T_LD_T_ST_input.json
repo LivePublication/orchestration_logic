@@ -1,0 +1,135 @@
+{
+  "required": [
+    "input",
+    "output_paths_LD",
+    "output_paths_FT"
+  ],
+  "properties": {
+    "input": {
+      "type": "object",
+      "required": [
+        "datastore",
+        "LP_configuration"
+      ],
+      "properties": {
+        "datastore": {
+          "type": "object",
+          "title": "Datastore information (UUID, data paths)",
+          "required": [
+            "id",
+            "data_path",
+            "validation_path",
+            "validation_dest_path"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Datastore UUID",
+              "default": "d6215ec8-244a-11ee-80c1-a3018385fcef"
+            },
+            "data_path": {
+              "type": "string",
+              "default": "/home/ubuntu/LiD_Datastore/input_data.txt"
+            },
+            "validation_path": {
+              "type": "string",
+              "default": "/home/ubuntu/LiD_Datastore/validation.txt"
+            },
+            "validation_dest_path": {
+              "type": "string",
+              "default": "/home/ubuntu/statistics_lpap/input/validation.txt"
+            }
+          },
+          "description": "Datastore and data/validation paths",
+          "propertyOrder": [
+            "id",
+            "data_path",
+            "validation_path",
+            "validation_dest_path"
+          ],
+          "additionalProperties": false
+        },
+        "LP_configuration": {
+          "type": "object",
+          "required": [
+            "orchestration_node",
+            "article_name"
+          ],
+          "properties": {
+            "orchestration_node": {
+              "type": "string",
+              "title": "Orchestration UUID",
+              "format": "uuid",
+              "default": "c60ab3ec-1eb2-11ee-818b-195c41bc0be4"
+            },
+            "article_name": {
+              "type": "string",
+              "title": "Article Title"
+            }
+          },
+          "propertyOrder": [
+            "orchestration_node",
+            "article_name"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "output_paths_LD": {
+      "type": "object",
+      "required": [
+        "DS_LD_dest",
+        "LD_ST_dest"
+      ],
+      "properties": {
+        "DS_LD_dest": {
+          "type": "string",
+          "default": "/home/ubuntu/langdetect_lpap/input/input_data.txt",
+          "title": "DS_LD Path for transfer location. Unlikely to change."
+        },
+        "LD_ST_dest": {
+          "type": "string",
+          "default": "/home/ubuntu/statistics_lpap/input/langdetect_predictions.txt",
+          "title": "LD_ST Path for transfer location. Unlikely to change."
+        }
+      },
+      "description": "Destination paths for intermediate transfers. Unlikely to change.",
+      "propertyOrder": [
+        "DS_LD_dest",
+        "LD_ST_dest"
+      ],
+      "additionalProperties": false
+    },
+    "output_paths_FT": {
+      "type": "object",
+      "required": [
+        "DS_FT_dest",
+        "FT_ST_dest"
+      ],
+      "properties": {
+        "DS_FT_dest": {
+          "type": "string",
+          "default": "/home/ubuntu/fastText_lpap/input/input_data.txt",
+          "title": "DS_FT Path for transfer location. Unlikely to change."
+        },
+        "FT_ST_dest": {
+          "type": "string",
+          "default": "/home/ubuntu/statistics_lpap/input/fastText_predictions.txt",
+          "title": "FT_ST Path for transfer location. Unlikely to change."
+        }
+      },
+      "description": "Destination paths for intermediate transfers. Unlikely to change.",
+      "propertyOrder": [
+        "DS_FT_dest",
+        "FT_ST_dest"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "propertyOrder": [
+    "input",
+    "output_paths_LD",
+    "output_paths_FT"
+  ]
+}
