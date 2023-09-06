@@ -53,6 +53,8 @@ cover/
 
 .DS_Store
 orchestration_venv
+config.py
+scope_definition
 
 # Translations
 *.mo

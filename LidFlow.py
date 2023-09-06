@@ -13,6 +13,9 @@ from gladier_components.langDetect import langDetect
 from gladier_components.LD_ST_Transfer import LD_ST_Transfer
 from gladier_components.statistics import Statistics
 
+from globus_sdk.scopes import TransferScopes
+from globus_sdk import TransferClient
+
 from orchestration_types import OrchestrationData
 from pathlib import Path
 
@@ -53,13 +56,13 @@ class LidFlow:
     class LiDClient(GladierBaseClient):
         gladier_tools = [
             DS_ST_Transfer,
-            DS_FT_Transfer,
-            fastText,
-            FT_ST_Transfer,
-            DS_LD_Transfer,
-            langDetect,
-            LD_ST_Transfer,
-            Statistics
+            # DS_FT_Transfer,
+            # fastText,
+            # FT_ST_Transfer,
+            # DS_LD_Transfer,
+            # langDetect,
+            # LD_ST_Transfer,
+            # Statistics
             # DS_ST_Transfer, # Testing
             # DS_FT_Transfer # Testing
         ]
@@ -229,28 +232,58 @@ class LidFlow:
               }
             }
             
-        return flow_input
+        return DS_ST_Transfer
 
     def run(self):
         # Print flow definition
         print(json.dumps(self.client.get_flow_definition(), indent=4))
+        # Add WEP for OCrate
         self.WEP = self.client.get_flow_definition()
+        # Add transfer scope to gladier client so we can 
+        # monitor sub-crate transfers and wait on their completion
+        self.client.login_manager.add_requirements(["urn:globus:auth:scope:transfer.api.globus.org:all"])
         self.current_run = self.client.run_flow(flow_input=self.get_input())
         return self.current_run
     
     def monitor_run(self):
         # Monitor run and return when complete
+        # Monitor subcrate transfers & return when complete
         if hasattr(self, 'current_run'):
             start_time = time.time()
             while(self.client.get_status(self.current_run['action_id'])['status'] == 'ACTIVE'):
                 elapsed_time = time.time() - start_time
-                print(f"Flow {self.client.get_flow_id()} | Run {self.current_run['action_id']} | Time Elapsed: {elapsed_time:.2f}s")
+                print(f"Flow {self.client.get_flow_id()} | Run {self.current_run['action_id']} | Time Elapsed: {elapsed_time:.2f}s", end='\r', flush=True)
             else:
-                print(f"Run {self.current_run['run_id']} complete")
+                print(f"Run {self.current_run['run_id']} complete | Waiting on subcrate transfers to complete")
+                # Collect the Workflow Execution Description (WED)
                 self.WED = self.client.get_status(self.current_run['action_id'])
+
+                # Now that the run is complete, check on sub-crate transfers and wait on their completion 
+                # before beginning Ocrate generation. 
+                transfer_authorizor = self.client.login_manager.get_authorizers()['urn:globus:auth:scope:transfer.api.globus.org:all']
+                transfer_client = TransferClient(authorizer=transfer_authorizor)
+                
+                # Get LPAP action_id's for monitoring subcrate transfers
+                task_labels = ["17Bx3NATDqPCC"] # testing
+
+                # Grab task labels from the WEP 
+                # task_labels = []
+                print(self.WEP)
+
+                print(json.dumps(self.WED, indent=4))
+                for task in transfer_client.task_list(filter={"label": task_labels}):
+                    print(f"Transfer {task['task_id']} | Status: {task['status']}")
+
+                # create a new transfer client & list transfers
+                # TODO
+
                 return True
         else:
             raise ValueError('Run has not been started yet')
+        
+    def calculate_tasks(self):
+        # Calculate bound
+        pass
 
     def get_components(self):
         # Get components for inlcusion in the OCrate
