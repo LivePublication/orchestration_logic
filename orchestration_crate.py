@@ -1,9 +1,11 @@
 import json
 import os
+import yaml
 
 from python_mermaid.diagram import (MermaidDiagram, Node, Link)
 from rocrate.rocrate import ROCrate
 from orchestration_types import OrchestrationData
+from datetime import datetime
 
 class Orchestration_crate:
     def __init__(self, flow_instance, orchestration_data: OrchestrationData, crate_directory="RO_Crate"):
@@ -12,6 +14,18 @@ class Orchestration_crate:
         self.crate = ROCrate()
         self.flow_data = orchestration_data
 
+        # Init configuration for top level metadata
+        self.crate.name = os.path.basename(self.flow_data.article_name)
+        self.crate.datePublished = datetime.now().date()
+        self.crate.creator = "Orchestration Server"
+        self.crate.license = "https://creativecommons.org/licenses/by-nc-sa/3.0/au/"
+
+        # Get keywords from Globus AP's?
+        # self.crate.keywords = []
+
+        # print(orchestration_data.WED_clean)
+
+
     def serialize(self):
         self.crate.write(self.crate_directory)
 
@@ -19,7 +33,14 @@ class Orchestration_crate:
         pass # TODO
         # self.crate.add_workflow(self.flow_data['WEP'], lang='Amazon States Language', )
 
+    def add_steps(self):
+        # Uses WEP_clean as an ordered list of steps (Globus -> currently always sequential)
+        pass
+
     def generate_mermaid_diagram(self):
+        """
+        Quick and dirty way to generate a mermaid diagram from the flow data.
+        """
         # Directly access states
         states = self.flow_data.WEP["States"]
 

@@ -55,6 +55,9 @@ cover/
 orchestration_venv
 config.py
 scope_definition
+testing_output
+sub_crates
+working_crate
 
 # Translations
 *.mo
