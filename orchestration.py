@@ -54,24 +54,17 @@ if __name__ == '__main__':
 
     orchestration_data: OrchestrationData = lid_flow.get_data() # Get orchestration data
     orchestration_crate = Orchestration_crate(lid_flow, orchestration_data, (Path.cwd() / "working_crate")) # Create orchestration crate object
+    orchestration_crate.generate_flow_diagram() # Generate flow diagram
+    orchestration_crate.add_users() # Add users to orchestration crate
     orchestration_crate.add_steps() # Add steps to orchestration crate
     orchestration_crate.serialize() # Serialize orchestration crate
 
-    print(orchestration_data.identity_map)
 
-    """
-    Testing outputs
-    """
-    # Write orchestration_data.WED_clean to file
-    with open("testing_output/WED_clean.json", "w") as f:
-        f.write(json.dumps(orchestration_data.WED_clean, indent=4))
-    # Write orchestration_data.WED to file
-    with open("testing_output/WED.json", "w") as f:
-        f.write(json.dumps(orchestration_data.WED, indent=4))
-    # Write orchestration_data.components to file
-    with open("testing_output/components.json", "w") as f:
-        paths = [str(path) for path in orchestration_data.components.values()]
-        f.write(json.dumps(paths, indent=4))
-    # Write orchestration_data.input to file
-    with open("testing_output/input.json", "w") as f:
-        f.write(json.dumps(orchestration_data.input, indent=4))
+    lid_flow.serrialize_data() # Serialize orchestration data for testing
+
+    # oCrate = Orchestration_crate(None, None, (Path.cwd() / "working_crate"), True)
+    # oCrate.deserialize_data() # Using local data for testing
+    # oCrate.generate_flow_diagram() # Generate flow diagram
+    # oCrate.add_users() # Add users to orchestration crate
+    # oCrate.add_steps()
+    # oCrate.serialize()

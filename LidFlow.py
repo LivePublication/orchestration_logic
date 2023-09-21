@@ -9,8 +9,9 @@ import json
 import sys
 import time
 import yaml
-
 import logging
+
+from datetime import datetime
 
 # Step 1 and 2: Set up a logger for your script and set its level to INFO
 logger = logging.getLogger(__name__)
@@ -60,11 +61,11 @@ class LidFlow:
             DS_ST_Transfer,
             DS_FT_Transfer,
             fastText,
-            # FT_ST_Transfer,
-            # DS_LD_Transfer,
-            # langDetect,
-            # LD_ST_Transfer,
-            # Statistics
+            FT_ST_Transfer,
+            DS_LD_Transfer,
+            langDetect,
+            LD_ST_Transfer,
+            Statistics
         ]
 
     def get_input(self):
@@ -251,7 +252,7 @@ class LidFlow:
               }
             }
             
-        return three_step
+        return flow_input
 
     def run(self):
         # Print flow definition
@@ -278,8 +279,7 @@ class LidFlow:
             # If the current block is "ActionStarted", we extract the "state_name"
             if self.WED[i]['code'] == 'ActionStarted':
                 action_name = self.WED[i]['details']['state_name']
-                start_time = self.WED[i]['time'] # Inlcuding start time in the cleaned data so we can calculate runtime
-                
+                start_time = datetime.fromisoformat(self.WED[i]['time'].replace('Z', '+00:00'))
                 # Finding the corresponding "ActionCompleted" block and extracting results
                 if self.WED[i+1]['code'] == 'ActionCompleted':
                     result_key1 = f"{action_name}_result"
@@ -295,7 +295,9 @@ class LidFlow:
                     
                     # Storing the results in the dictionary if action_results is found
                     if action_results:
-                        action_results['start_time'] = start_time
+                        end_time = datetime.fromisoformat(self.WED[i+1]['time'].replace('Z', '+00:00'))
+                        total_time = (end_time - start_time).total_seconds()
+                        action_results['total_execution_time'] = total_time # Add total execution time to results
                         cleaned_data[action_name] = action_results
 
         return cleaned_data
@@ -433,6 +435,20 @@ class LidFlow:
             self.identity_map[g_id] = GlobusUser(**identity)
 
         return self.identity_map
+    
+    def serrialize_data(self):
+        """
+        A function for saving the data used to generate the OCrate to file for testing purposes.
+
+        Parameters:
+        self.OrchestrationData (OrchestrationData): An object containing the data for the OCrate.
+        """
+
+        # Check that self.OrchestrationData is initialized
+        logger.info("Writing orchestration data to file")
+        with open("orchestration_data.json", "w") as f:
+            f.write(json.dumps(self.get_data().to_dict(), indent=4))
+        
 
     def get_data(self) -> OrchestrationData:
         """
@@ -450,6 +466,16 @@ class LidFlow:
         Returns:
         OrchestrationData: An object containing the data for the OCrate.
         """
+
+        attributes_to_check = [
+            'client', 'flow_id', 'run_id', 'LP_configuration', 
+            'WEP', 'WED', 'WED_clean'
+        ]
+
+        for attr in attributes_to_check:
+            if not hasattr(self, attr):
+                raise AttributeError(f"The attribute '{attr}' is not initialized.")
+
         data = {
             "input": self.get_input(),
             "WEP": self.WEP,
@@ -463,4 +489,5 @@ class LidFlow:
             "article_name": self.LP_configuration['article_name'],
             "identity_map": self.identity_mapping()
         }
+        
         return OrchestrationData(**data)
