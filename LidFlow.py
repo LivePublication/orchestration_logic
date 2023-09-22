@@ -46,12 +46,14 @@ from pathlib import Path
 
 class LidFlow:
     
-    def __init__(self, endpoints, data_paths, intermediate_paths, LP_configuration):
+    def __init__(self, endpoints, data_paths, intermediate_paths, LP_configuration, run_label, run_tags):
       self.client = self.LiDClient()
       self.endpoints = endpoints
       self.data_paths = data_paths
       self.intermediate_paths = intermediate_paths
       self.LP_configuration = LP_configuration
+      self.run_label = run_label
+      self.run_tags = run_tags
       
 
     @staticmethod
@@ -265,7 +267,11 @@ class LidFlow:
         """
         self.client.login_manager.add_requirements([TransferScopes.all])
         self.client.login_manager.add_requirements([AuthScopes.view_identities])
-        self.run = self.client.run_flow(flow_input=self.get_input())
+        self.run = self.client.run_flow(
+            flow_input=self.get_input(),
+            label=self.run_label,
+            tags=self.run_tags
+            )
         self.run_id = self.run['action_id']
         self.flow_id = self.client.get_flow_id()
         return self.run

@@ -44,27 +44,28 @@ if __name__ == '__main__':
         "article_name": "/Users/eller/Projects/orchestration_logic/sub_crates"
     }
 
+    # Run label and tags for the flow
+    run_label = "LiDFlow run"
+    run_tags = ["LID", "Orchestration", "Test"]
+
+
     lid_flow = LidFlow(endpoints, 
                        data_paths, 
                        intermediate_paths, 
-                       LP_configuration)    # Create flow object
+                       LP_configuration,
+                       run_label=run_label,
+                       run_tags=run_tags)    # Create flow object
     lid_flow.run()                          # Run flow
     lid_flow.monitor_run()                  # Wait untill Globus flow complete
     lid_flow.monitor_transfer()             # Wait untill LPAP transfers to orchestration server complete 
 
     orchestration_data: OrchestrationData = lid_flow.get_data() # Get orchestration data
-    orchestration_crate = Orchestration_crate(lid_flow, orchestration_data, (Path.cwd() / "working_crate")) # Create orchestration crate object
-    orchestration_crate.generate_flow_diagram() # Generate flow diagram
-    orchestration_crate.add_users() # Add users to orchestration crate
-    orchestration_crate.add_steps() # Add steps to orchestration crate
-    orchestration_crate.serialize() # Serialize orchestration crate
+    orchestration_crate = Orchestration_crate(lid_flow, orchestration_data, (Path.cwd() / "working_crate"), run_label, run_tags) # Create orchestration crate object
+    orchestration_crate.build_crate() # Build orchestration crate
 
 
-    lid_flow.serrialize_data() # Serialize orchestration data for testing
+    # lid_flow.serrialize_data() # Serialize orchestration data for testing
 
-    # oCrate = Orchestration_crate(None, None, (Path.cwd() / "working_crate"), True)
+    # oCrate = Orchestration_crate(None, None, (Path.cwd() / "working_crate"), run_label, run_tags, True)
     # oCrate.deserialize_data() # Using local data for testing
-    # oCrate.generate_flow_diagram() # Generate flow diagram
-    # oCrate.add_users() # Add users to orchestration crate
-    # oCrate.add_steps()
-    # oCrate.serialize()
+    # oCrate.build_crate()

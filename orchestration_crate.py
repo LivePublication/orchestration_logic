@@ -1,6 +1,7 @@
 import json
 import os
 import yaml
+import tempfile
 
 from graphviz import Digraph
 from rocrate.rocrate import ROCrate, ContextEntity, DataEntity, ComputationalWorkflow
@@ -8,7 +9,12 @@ from orchestration_types import OrchestrationData
 from datetime import datetime
 
 class Orchestration_crate:
-    def __init__(self, flow_instance, orchestration_data: OrchestrationData, crate_directory="RO_Crate", local_data=False):
+    def __init__(self, 
+                 flow_instance, 
+                 orchestration_data: OrchestrationData, 
+                 crate_directory="RO_Crate", 
+                 run_label=None, run_tags=None, 
+                 local_data=False):
 
         if local_data:
             self.flow_data = self.deserialize_data()
@@ -26,18 +32,51 @@ class Orchestration_crate:
         self.crate.datePublished = datetime.now().date()
         self.crate.creator = "Orchestration Server"
         self.crate.license = "https://creativecommons.org/licenses/by-nc-sa/3.0/au/"
-
-        # Get keywords from Globus AP's?
-        # self.crate.keywords = []
-
-        # print(orchestration_data.WED_clean)
+        self.run_label = run_label
+        self.run_tags = run_tags
 
     def serialize(self):
         self.crate.write(self.crate_directory)
 
     def add_workflow(self):
-        pass # TODO
-        # self.crate.add_workflow(self.flow_data['WEP'], lang='Amazon States Language', )
+        """
+        Manually creates the workflow meta-data object, as the 
+        helper functions assume CWL / other common workflow formats
+        """
+        # Write flow_data.WEP to file 
+        temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json")
+        temp_file.write(json.dumps(self.flow_data.WEP, indent=4))
+        temp_file.close()
+
+        workflow = self.crate.add_file(
+            source=temp_file.name,
+            properties={
+                "@type":["File", "SoftwareSourceCode", "ComputationalWorkflow"],
+                "name":self.run_label,
+                "encoding":"utf-8",
+                "content_type":"application/json",
+                "Author": None, # TODO
+            }
+        )
+
+        # Add workflow image
+        workflow_svg = self.generate_flow_diagram()
+        generate_flow_diagram = self.crate.add_file(
+            source=workflow_svg,
+            properties={
+                "@type":["File", "ImageObject"],
+                "name":"Full Globus Workflow Diagram",
+                "encoding":"utf-8",
+                "content_type":"image/svg+xml",
+            }
+        )
+        workflow["image"] = generate_flow_diagram
+
+        # Add workflow licence 
+        workflow["license"] = "https://creativecommons.org/licenses/by-nc-sa/3.0/au/" # TODO check licence type
+
+        self.workflow = workflow
+        return workflow
 
     def add_users(self):
 
@@ -58,20 +97,8 @@ class Orchestration_crate:
 
     def add_steps(self):
         # Uses WEP_clean as an ordered list of steps (Globus -> currently always sequential)
-        current_step = 0
-
-        workflow_steps = self.crate.add(
-            ContextEntity(
-                crate=self.crate,
-                identifier='Workflow Steps',
-                properties = {
-                    "@type":"Workflow",
-                    "name":"Orchestration Workflow",
-                    "description":"Orchestration Workflow",
-                }
-            )
-        )
-
+        current_step = 1
+        step_list = []
         for key, value in self.flow_data.WED_clean.items():
 
             # Metadata to store at the top level of the sub-crate step entries
@@ -101,6 +128,7 @@ class Orchestration_crate:
                         "status":status,
                         "state_name":state_name,
                         "total_execution_time":total_execution_time,
+                        "step_number":current_step,
                     }
                 )
             )
@@ -108,30 +136,19 @@ class Orchestration_crate:
             if 'Transfer' not in key:
                 # print("LPAP action")
                 sub_crate_path = os.path.join(self.flow_data.article_name, action_id)
-                print(sub_crate_path)
                 if os.path.isdir(sub_crate_path):
-                    sub_crate = self.crate.add_tree(
-                        source=sub_crate_path,
-                        properties={
-                            '@Type':'RO-Crate:Subcrate',
-                        }
-                    )
-
+                    sub_crate = self.crate.add_tree(source=sub_crate_path)
                     # Link subcrate to step
                     step["hasPart"] = [sub_crate]
                 else:
                     raise Exception(f"Subcrate for LPAP action {action_id} does not exist")
-
-                # self.crate.add_directory(
-                #     source = self.flow_data.article_name
-                # )
-            else:
-                print("transfer action")
-
             
             # Link step to workflow steps
-            workflow_steps[f"step_{current_step}"] = step
+            step_list.append(step)
             current_step += 1
+        
+        # Link workflow to steps
+        self.workflow["hasPart"] = step_list
 
     def deserialize_data(self):
         """
@@ -177,8 +194,12 @@ class Orchestration_crate:
 
         # Render the graph to files in both PNG and SVG formats
         output_base = 'flow_diagram'
-        self.diagram.render(filename=output_base, format='svg')
+        return self.diagram.render(filename=output_base, format='svg')
+
         
-
-
+    def build_crate(self):
+        self.add_users() # Add users to orchestration crate
+        self.add_workflow()
+        self.add_steps()
+        self.serialize()
 
