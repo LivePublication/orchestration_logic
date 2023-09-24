@@ -461,13 +461,15 @@ class LidFlow:
         Collate and return data for OCrate generation.
 
         Parameters:
-        self.WEP (dict): The workflow execution plan.
-        self.WED (dict): The workflow execution details.
-        self.WED_clean (dict): The cleaned workflow execution details.
-        self.client.gladier_tools (list): A list of Gladier tools used in the workflow.
-        self.flow_id (str): The ID of the workflow.
-        self.run_id (str): The ID of the workflow run.
-        self.LP_configuration (dict): The LivePublication configuration.
+        input: The input definition for the Gladier flow.
+        WEP: The WEP definition for the Gladier flow.
+        WED: The WED definition for the Gladier flow.
+        WED_clean: The cleaned WED definition for the Gladier flow.
+        components: The Gladier components used in the Gladier flow.
+        flow_id: The ID of the Gladier flow.
+        run_id: The ID of the Gladier run.
+        article_name: The name of the LivePublication article.
+        identity_map: A dictionary mapping Globus IDs to their GlobusUser objects.
 
         Returns:
         OrchestrationData: An object containing the data for the OCrate.

@@ -2,6 +2,7 @@ import json
 import os
 import yaml
 import tempfile
+import shutil
 
 from graphviz import Digraph
 from rocrate.rocrate import ROCrate, ContextEntity, DataEntity, ComputationalWorkflow
@@ -196,6 +197,13 @@ class Orchestration_crate:
         output_base = 'flow_diagram'
         return self.diagram.render(filename=output_base, format='svg')
 
+    def clean_up(self):
+        # Removes sub-crates, and other artefacts after constructing the orchestration crate
+        # Remove sub-crates
+        shutil.rmtree(self.flow_data.article_name)
+        # Remove diagram
+        os.remove("flow_diagram.svg")
+        os.remove("flow_diagram")
         
     def build_crate(self):
         self.add_users() # Add users to orchestration crate

@@ -21,13 +21,13 @@ if __name__ == '__main__':
         "DS_UUID": "d6215ec8-244a-11ee-80c1-a3018385fcef"
     }
 
-        # Data paths for the actual test and validation data
+    # Data paths for the actual test and validation data
     data_paths = {
         "validation_path": "/home/ubuntu/LiD_Datastore/validation.txt",
         "data_path": "/home/ubuntu/LiD_Datastore/input_data.txt"
     }
 
-        # Intermediate paths for data transfer between LPAPs
+    # Intermediate paths for data transfer between LPAPs
     intermediate_paths = {
         "validation_dest_path": "/home/ubuntu/statistics_lpap/input/validation.txt",
         "DS_FT_dest": "/home/ubuntu/fastText_lpap/input/input_data.txt",
@@ -39,6 +39,9 @@ if __name__ == '__main__':
     }
 
         # LivePublication configuration
+    
+    # LivePub name/subcrate path & orchestration node UUID
+    # TODO change article_name to subcrate_path -> will need to change in LPAPs 
     LP_configuration = {
         "orchestration_node": ep_id,
         "article_name": "/Users/eller/Projects/orchestration_logic/sub_crates"
@@ -54,7 +57,7 @@ if __name__ == '__main__':
                        intermediate_paths, 
                        LP_configuration,
                        run_label=run_label,
-                       run_tags=run_tags)    # Create flow object
+                       run_tags=run_tags)   # Create flow object
     lid_flow.run()                          # Run flow
     lid_flow.monitor_run()                  # Wait untill Globus flow complete
     lid_flow.monitor_transfer()             # Wait untill LPAP transfers to orchestration server complete 
@@ -62,10 +65,12 @@ if __name__ == '__main__':
     orchestration_data: OrchestrationData = lid_flow.get_data() # Get orchestration data
     orchestration_crate = Orchestration_crate(lid_flow, orchestration_data, (Path.cwd() / "working_crate"), run_label, run_tags) # Create orchestration crate object
     orchestration_crate.build_crate() # Build orchestration crate
+    orchestration_crate.clean_up() # Simple removal of local sub-crates and diagram temp files
 
+    # For testing, you can use the following code to serialize and deserialize orchestration data
+    # Meaning, you dont need to re-run the flow to test the orchestration crate build
 
     # lid_flow.serrialize_data() # Serialize orchestration data for testing
-
     # oCrate = Orchestration_crate(None, None, (Path.cwd() / "working_crate"), run_label, run_tags, True)
     # oCrate.deserialize_data() # Using local data for testing
     # oCrate.build_crate()
