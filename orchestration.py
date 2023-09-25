@@ -2,9 +2,7 @@ from pathlib import Path
 from LidFlow import LidFlow
 from orchestration_crate import Orchestration_crate
 from orchestration_types import OrchestrationData
-
 from globus_sdk import LocalGlobusConnectPersonal
-import json
 
 if __name__ == '__main__':
 
@@ -37,8 +35,6 @@ if __name__ == '__main__':
         "FT_output_path": "/home/ubuntu/fastText_lpap/output/fastText_predictions.txt",
         "LD_output_path": "/home/ubuntu/langdetect_lpap/output/langdetect_predictions.txt"
     }
-
-        # LivePublication configuration
     
     # LivePub name/subcrate path & orchestration node UUID
     # TODO change article_name to subcrate_path -> will need to change in LPAPs 

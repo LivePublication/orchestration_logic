@@ -13,7 +13,7 @@ import logging
 
 from datetime import datetime
 
-# Step 1 and 2: Set up a logger for your script and set its level to INFO
+# Set up a logger for your script and set its level to INFO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -28,20 +28,22 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 from gladier import GladierBaseClient, generate_flow_definition
-from gladier_components.DS_FT_Transfer import DS_FT_Transfer
-from gladier_components.DS_ST_Transfer import DS_ST_Transfer
-from gladier_components.fastText import fastText
-from gladier_components.FT_ST_Transfer import FT_ST_Transfer
-from gladier_components.DS_LD_Transfer import DS_LD_Transfer
-from gladier_components.langDetect import langDetect
-from gladier_components.LD_ST_Transfer import LD_ST_Transfer
-from gladier_components.statistics import Statistics
+
+
+from .gladier_components.DS_FT_Transfer import DS_FT_Transfer
+from .gladier_components.DS_ST_Transfer import DS_ST_Transfer
+from .gladier_components.fastText import fastText
+from .gladier_components.FT_ST_Transfer import FT_ST_Transfer
+from .gladier_components.DS_LD_Transfer import DS_LD_Transfer
+from .gladier_components.langDetect import langDetect
+from .gladier_components.LD_ST_Transfer import LD_ST_Transfer
+from .gladier_components.statistics import Statistics
 
 from globus_sdk.scopes import TransferScopes, FlowsScopes, AuthScopes
 from globus_sdk import TransferClient, FlowsClient, AuthClient
 from globus_sdk.paging import Paginator
 
-from orchestration_types import OrchestrationData, GlobusUser
+from .orchestration_types import OrchestrationData, GlobusUser
 from pathlib import Path
 
 class LidFlow:

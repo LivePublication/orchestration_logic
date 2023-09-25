@@ -3,11 +3,19 @@ import os
 import yaml
 import tempfile
 import shutil
+import logging
 
 from graphviz import Digraph
 from rocrate.rocrate import ROCrate, ContextEntity, DataEntity, ComputationalWorkflow
-from orchestration_types import OrchestrationData
+from .orchestration_types import OrchestrationData
 from datetime import datetime
+
+# Set up a logger for your script and set its level to INFO
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Step 3: Get the root logger and set its level to WARNING to suppress logs from other libraries
+logging.getLogger().setLevel(logging.INFO)
 
 class Orchestration_crate:
     def __init__(self, 
@@ -210,4 +218,7 @@ class Orchestration_crate:
         self.add_workflow()
         self.add_steps()
         self.serialize()
+
+        logger.info(f"Orchestration crate built at {self.crate_directory}")
+        
 
