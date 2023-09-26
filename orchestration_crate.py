@@ -170,8 +170,6 @@ class Orchestration_crate:
         # Uses WEP_clean as an ordered list of steps (Globus -> currently always sequential)
         # Inlcudes gladier component files as attributes for each step # TODO
 
-        print(self.flow_data.components)
-
         current_step = 1
         step_list = []
         for key, value in self.flow_data.WED_clean.items():
