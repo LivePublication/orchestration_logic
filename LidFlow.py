@@ -37,7 +37,7 @@ from .gladier_components.FT_ST_Transfer import FT_ST_Transfer
 from .gladier_components.DS_LD_Transfer import DS_LD_Transfer
 from .gladier_components.langDetect import langDetect
 from .gladier_components.LD_ST_Transfer import LD_ST_Transfer
-from .gladier_components.statistics import Statistics
+from .gladier_components.statistics import statistics
 
 from globus_sdk.scopes import TransferScopes, FlowsScopes, AuthScopes
 from globus_sdk import TransferClient, FlowsClient, AuthClient
@@ -69,7 +69,7 @@ class LidFlow:
             DS_LD_Transfer,
             langDetect,
             LD_ST_Transfer,
-            Statistics
+            statistics
         ]
 
     def get_input(self):

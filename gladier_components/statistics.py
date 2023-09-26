@@ -1,7 +1,7 @@
 from gladier import GladierBaseTool
 
 # Statistics LPAP action provider definition
-class Statistics(GladierBaseTool):  
+class statistics(GladierBaseTool):  
     flow_definition = {
       "Comment": "Calculates comparative statistics against validation data", 
       "StartAt": "statistics", 

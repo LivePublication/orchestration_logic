@@ -10,12 +10,23 @@ from rocrate.rocrate import ROCrate, ContextEntity, DataEntity, ComputationalWor
 from .orchestration_types import OrchestrationData
 from datetime import datetime
 
+import logging
+
 # Set up a logger for your script and set its level to INFO
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Step 3: Get the root logger and set its level to WARNING to suppress logs from other libraries
-logging.getLogger().setLevel(logging.INFO)
+# Create a handler, set its level to INFO, and define a format for the handler
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(handler)
+
+# Set the level of the root logger to WARNING to suppress logs from other libraries
+logging.getLogger().setLevel(logging.WARNING)
 
 class Orchestration_crate:
     def __init__(self, 
@@ -49,43 +60,91 @@ class Orchestration_crate:
 
     def add_workflow(self):
         """
-        Manually creates the workflow meta-data object, as the 
-        helper functions assume CWL / other common workflow formats
+        Manually creates the workflow meta-data object
         """
-        # Write flow_data.WEP to file 
-        temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json")
-        temp_file.write(json.dumps(self.flow_data.WEP, indent=4))
-        temp_file.close()
 
-        workflow = self.crate.add_file(
-            source=temp_file.name,
-            properties={
-                "@type":["File", "SoftwareSourceCode", "ComputationalWorkflow"],
-                "name":self.run_label,
-                "encoding":"utf-8",
-                "content_type":"application/json",
-                "Author": None, # TODO
-            }
-        )
+        # Check if self.flow_data.WEP exists
+        if not hasattr(self.flow_data, 'WEP') or self.flow_data.WEP is None:
+            raise AttributeError("flow_data.WEP does not exist or is None")
+        
+        # Check if self.crate exists and has add_file method
+        if not hasattr(self, 'crate') or not hasattr(self.crate, 'add_file'):
+            raise AttributeError("crate or crate.add_file does not exist")
+        
+        """ Add WEP to crate """
+        try:
+            # Add WEP to crate
+            with open("WEP.json", "w") as json_file:
+                json.dump(self.flow_data.WEP, json_file, indent=4)
 
-        # Add workflow image
-        workflow_svg = self.generate_flow_diagram()
-        generate_flow_diagram = self.crate.add_file(
-            source=workflow_svg,
-            properties={
-                "@type":["File", "ImageObject"],
-                "name":"Full Globus Workflow Diagram",
-                "encoding":"utf-8",
-                "content_type":"image/svg+xml",
-            }
-        )
-        workflow["image"] = generate_flow_diagram
+                try:
+                    workflow = self.crate.add_file(
+                        source=json_file.name,
+                        properties={
+                            "@type": ["File", "SoftwareSourceCode", "ComputationalWorkflow"],
+                            "name": self.run_label,
+                            "encoding": "utf-8",
+                            "content_type": "application/json",
+                            "Author": None,  # TODO
+                        }
+                    )
+                except Exception as e:
+                    raise RuntimeError(f"Error adding file to crate: {str(e)}")
+        
+        except Exception as e:
+            raise RuntimeError(f"Error writing to WEP.json: {str(e)}")
+        
+        # Check if self.generate_flow_diagram exists and is callable
+        if not hasattr(self, 'generate_flow_diagram') or not callable(self.generate_flow_diagram):
+            raise AttributeError("generate_flow_diagram does not exist or is not callable")
+        
+        """ Add workflow input to crate """
+        try:
+            with open("WEP_input.json", "w") as json_file:
+                json.dump(self.flow_data.input, json_file, indent=4)
 
-        # Add workflow licence 
-        workflow["license"] = "https://creativecommons.org/licenses/by-nc-sa/3.0/au/" # TODO check licence type
+                try:
+                    workflow["input"] = self.crate.add_file(
+                        source=json_file.name,
+                        properties={
+                            "@type": ["File", "Dataset"],
+                            "name": "Workflow Input",
+                            "encoding": "utf-8",
+                            "content_type": "application/json",
+                        }
+                    )
+                except Exception as e:
+                    raise RuntimeError(f"Error adding workflow input to crate: {str(e)}")
+        except Exception as e:
+            raise RuntimeError(f"Error writing to WEP_input.json: {str(e)}")
 
+        """ Add workflow image to crate """
+        try:
+            # Add workflow image
+            workflow_svg = self.generate_flow_diagram()
+            
+            try:
+                workflow["image"] = self.crate.add_file(
+                    source=workflow_svg,
+                    properties={
+                        "@type": ["File", "ImageObject"],
+                        "name": "Full Globus Workflow Diagram",
+                        "encoding": "utf-8",
+                        "content_type": "image/svg+xml",
+                    }
+                )
+            except Exception as e:
+                raise RuntimeError(f"Error adding workflow image to crate: {str(e)}")
+            
+        except Exception as e:
+            raise RuntimeError(f"Error generating flow diagram: {str(e)}")
+        
+        # Add workflow license 
+        workflow["license"] = "https://creativecommons.org/licenses/by-nc-sa/3.0/au/"  # TODO check license type
+        
         self.workflow = workflow
         return workflow
+
 
     def add_users(self):
 
@@ -104,8 +163,15 @@ class Orchestration_crate:
                 )
             )
 
+    def add_gladier_components(self):
+        pass
+
     def add_steps(self):
         # Uses WEP_clean as an ordered list of steps (Globus -> currently always sequential)
+        # Inlcudes gladier component files as attributes for each step # TODO
+
+        print(self.flow_data.components)
+
         current_step = 1
         step_list = []
         for key, value in self.flow_data.WED_clean.items():
@@ -120,6 +186,7 @@ class Orchestration_crate:
             status = value.get('status')
             state_name = value.get('state_name')
             total_execution_time = value.get('total_execution_time')
+            gladier_component = self.flow_data.components[key]
 
             # Add step Contextual Entity
             step = self.crate.add(
@@ -142,13 +209,16 @@ class Orchestration_crate:
                 )
             )
 
+            # Add gladier component file, and link to step
+            component = self.crate.add_file(gladier_component)
+            step["hasPart"] = component
+
             if 'Transfer' not in key:
-                # print("LPAP action")
                 sub_crate_path = os.path.join(self.flow_data.article_name, action_id)
                 if os.path.isdir(sub_crate_path):
                     sub_crate = self.crate.add_tree(source=sub_crate_path)
                     # Link subcrate to step
-                    step["hasPart"] = [sub_crate]
+                    step["hasPart"] = [sub_crate, component]
                 else:
                     raise Exception(f"Subcrate for LPAP action {action_id} does not exist")
             
@@ -212,12 +282,30 @@ class Orchestration_crate:
         # Remove diagram
         os.remove("flow_diagram.svg")
         os.remove("flow_diagram")
+        os.remove("WEP.json")
+        os.remove("WEP_input.json")
+
+    def create_publication(self):
+        """ This is a very stupid piece of code, and is only intended to demonstrate the 
+        concept of creating a publication from an orchestration crate."""
+        # Create a new directory for the publication
+        publication_directory = os.path.join(os.getcwd(), self.flow_data.article_name)
+        os.mkdir(publication_directory)
+
+        # Copy the orchestration crate to the publication directory
+        shutil.copytree(self.crate_directory, publication_directory)
+        # Delete the orchestration crate
+        shutil.rmtree(self.crate_directory)
+
+        # Import the Quarto 
+        pass
         
     def build_crate(self):
-        self.add_users() # Add users to orchestration crate
-        self.add_workflow()
-        self.add_steps()
-        self.serialize()
+        self.add_users()                # Add users to orchestration crate
+        self.add_workflow()             # Add workflow to orchestration crate
+        self.add_steps()                # Add steps to orchestration crate
+        self.add_gladier_components()   # Add gladier components to orchestration crate      
+        self.serialize()                # Serialize orchestration crate
 
         logger.info(f"Orchestration crate built at {self.crate_directory}")
         
