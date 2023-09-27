@@ -214,7 +214,10 @@ class Orchestration_crate:
             if 'Transfer' not in key:
                 sub_crate_path = os.path.join(self.flow_data.article_name, action_id)
                 if os.path.isdir(sub_crate_path):
-                    sub_crate = self.crate.add_tree(source=sub_crate_path)
+                    print(sub_crate_path)
+                    path = self.static_dir_structure(sub_crate_path, key) # TODO: remove 
+                    print(path)
+                    sub_crate = self.crate.add_tree(source=path)
                     # Link subcrate to step
                     step["hasPart"] = [sub_crate, component]
                 else:
@@ -226,6 +229,25 @@ class Orchestration_crate:
         
         # Link workflow to steps
         self.workflow["hasPart"] = step_list
+
+    def static_dir_structure(self, crate_path, key):
+        # A gross function that translates the crate directory structure into a static directory structure
+        # TODO: This is a temporary solution, and should be replaced with parsing the crate metadata
+
+        print(key)
+        if "statistics" in key:
+            if os.path.isdir(crate_path):
+                new_path = f"{os.path.dirname(crate_path)}/statistics_lpap"
+                return shutil.copytree(crate_path, new_path)
+        if "fastText" in key:
+            if os.path.isdir(crate_path):
+                new_path = f"{os.path.dirname(crate_path)}/fastText_lpap"
+                return shutil.copytree(crate_path, new_path)
+        if "langDetect" in key:
+            if os.path.isdir(crate_path):
+                new_path = f"{os.path.dirname(crate_path)}/langdetect_lpap"
+                return shutil.copytree(crate_path, new_path)
+
 
     def deserialize_data(self):
         """
